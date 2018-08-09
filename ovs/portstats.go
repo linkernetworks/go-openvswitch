@@ -31,7 +31,7 @@ var (
 // operations.
 type PortStats struct {
 	// PortID specifies the OVS port ID which this PortStats refers to.
-	PortID int
+	PortID int32
 
 	// Received and Transmitted contain information regarding the number
 	// of received and transmitted packets, bytes, etc.
@@ -117,7 +117,7 @@ func (p *PortStats) UnmarshalText(b []byte) error {
 		if err != nil {
 			return err
 		}
-		p.PortID = int(id)
+		p.PortID = int32(id)
 	}
 
 	// Iterate all remaining strings to capture all output uint64
