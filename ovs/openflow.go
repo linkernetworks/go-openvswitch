@@ -341,9 +341,8 @@ func (o *OpenFlowService) describePorts(bridge string) ([]*PortDesc, error) {
 		if err := s.UnmarshalText(b); err != nil {
 			if err == ErrIgnoreUnusedDesc {
 				return nil
-			} else {
-				return err
 			}
+			return err
 		}
 		descs = append(descs, s)
 		return nil

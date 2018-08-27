@@ -25,7 +25,7 @@ var (
 	// dump-ports' do not match the expected output format.
 	ErrInvalidPortDesc = errors.New("invalid port description")
 
-	// Skip
+	// ErrIgnoreUnusedDesc is returned when the current input isn't what we want
 	ErrIgnoreUnusedDesc = errors.New("Ingore unused port description")
 )
 
