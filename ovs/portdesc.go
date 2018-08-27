@@ -24,6 +24,9 @@ var (
 	// ErrInvalidPortDesc is returned when port statistics from 'ovs-ofctl
 	// dump-ports' do not match the expected output format.
 	ErrInvalidPortDesc = errors.New("invalid port description")
+
+	// Skip
+	ErrIgnoreUnusedDesc = errors.New("Ingore unused port description")
 )
 
 // PortDesc contains a variety of statistics about an Open vSwitch port,
@@ -52,14 +55,21 @@ func (p *PortDesc) UnmarshalText(b []byte) error {
 	// package namespace with generic names
 	ss := strings.Fields(s)
 
+	if len(ss) < 2 {
+		return ErrInvalidPortDesc
+	}
+
 	addr := ss[1]
 	if len(addr) != 22 || addr[0:4] != "addr" {
-		return nil
+		return ErrIgnoreUnusedDesc
 	}
 
 	//We only parse the ID/Name/MAC now.
 	left := strings.IndexByte(ss[0], '(')
 	right := strings.IndexByte(ss[0], ')')
+	if (right - left) == 1 {
+		return ErrInvalidPortDesc
+	}
 	p.Name = ss[0][left+1 : right]
 
 	//Name
@@ -68,7 +78,7 @@ func (p *PortDesc) UnmarshalText(b []byte) error {
 	//ID
 	id := ss[0][0:left]
 	if id == "LOCAL" {
-		p.ID = -1
+		p.ID = PortLOCAL
 	} else {
 		tmp, _ := strconv.Atoi(id)
 		p.ID = (int32)(tmp)

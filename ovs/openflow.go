@@ -339,11 +339,13 @@ func (o *OpenFlowService) describePorts(bridge string) ([]*PortDesc, error) {
 	err = parseEachLine(out, dumpPortsDescPrefix, func(b []byte) error {
 		s := new(PortDesc)
 		if err := s.UnmarshalText(b); err != nil {
-			return err
+			if err == ErrIgnoreUnusedDesc {
+				return nil
+			} else {
+				return err
+			}
 		}
-		if s.Name != "" {
-			descs = append(descs, s)
-		}
+		descs = append(descs, s)
 		return nil
 	})
 
