@@ -569,6 +569,59 @@ func TestClientOpenFlowDumpPortsInvalidPortStats(t *testing.T) {
 	}
 }
 
+func TestClientOpenFlowDescPortsOK(t *testing.T) {
+	bridge := "br0"
+	want := []*PortDesc{
+		{
+			ID:         1,
+			Name:       "veth458c9a0d",
+			MACAddress: "a6:3c:!3:8b:c0:e9",
+		},
+		{
+			ID:         -1,
+			Name:       "br0",
+			MACAddress: "1a:e4:7d:9c:72:45",
+		},
+	}
+
+	c := testClient([]OptionFunc{Timeout(1)}, func(cmd string, args ...string) ([]byte, error) {
+		// Verify correct command and arguments passed, including option flags
+		if want, got := "ovs-ofctl", cmd; want != got {
+			t.Fatalf("incorrect command:\n- want: %v\n-  got: %v",
+				want, got)
+		}
+
+		wantArgs := []string{"--timeout=1", "dump-ports-desc", string(bridge)}
+		if want, got := wantArgs, args; !reflect.DeepEqual(want, got) {
+			t.Fatalf("incorrect arguments\n- want: %v\n-  got: %v",
+				want, got)
+		}
+
+		return []byte(`
+	OFPST_PORT_DESC reply (xid=0x2):
+	 1(veth458c9a0d): addr:a6:3c:!3:8b:c0:e9
+		 config: 0
+		 state:  0
+		 current: 10GB-FD COPPER
+         speed: 0 Mbps now, 0 Mbps max
+     LOCAL(br0): addr:1a:e4:7d:9c:72:45
+         config:     PORT_DOWN
+     	 state:      LINK_DOWN
+         speed: 0 Mbps now, 0 Mbps max
+		`), nil
+	})
+
+	got, err := c.OpenFlow.DescribePorts(bridge)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("unexpected stats:\n- want: %+v\n-  got: %+v",
+			want, got)
+	}
+}
+
 func TestClientOpenFlowDumpPortsOK(t *testing.T) {
 	want := []*PortStats{
 		{

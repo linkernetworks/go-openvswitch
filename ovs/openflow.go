@@ -207,6 +207,11 @@ func (o *OpenFlowService) ModPort(bridge string, port string, action PortAction)
 	return err
 }
 
+// DescribePorts retrieves the basic information of ports for specified bridge.
+func (o *OpenFlowService) DescribePorts(bridge string) ([]*PortDesc, error) {
+	return o.describePorts(bridge)
+}
+
 // DumpPort retrieves statistics about the specified port attached to the
 // specified bridge.
 func (o *OpenFlowService) DumpPort(bridge string, port string) (*PortStats, error) {
@@ -299,6 +304,9 @@ var (
 	// the output from 'ovs-ofctl dump-ports'.
 	dumpPortsPrefix = []byte("OFPST_PORT reply")
 
+	// dumpPortsDescPrefix
+	dumpPortsDescPrefix = []byte("OFPST_PORT_DESC reply")
+
 	// dumpTablesPrefix is a sentinel value returned at the beginning of
 	// the output from 'ovs-ofctl dump-tables'.
 	dumpTablesPrefix = []byte("OFPST_TABLE reply")
@@ -311,6 +319,36 @@ var (
 	// the output from "ovs-ofctl dump-aggregate"
 	dumpAggregatePrefix = []byte("NXST_AGGREGATE reply")
 )
+
+// dumpPorts calls 'ovs-ofctl dump-ports' with the specified arguments and
+// parses the output into zero or more PortStats structs.
+func (o *OpenFlowService) describePorts(bridge string) ([]*PortDesc, error) {
+	args := []string{
+		"dump-ports-desc",
+		bridge,
+	}
+
+	args = append(o.c.ofctlFlags, args...)
+
+	out, err := o.exec(args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var descs []*PortDesc
+	err = parseEachLine(out, dumpPortsDescPrefix, func(b []byte) error {
+		s := new(PortDesc)
+		if err := s.UnmarshalText(b); err != nil {
+			return err
+		}
+		if s.Name != "" {
+			descs = append(descs, s)
+		}
+		return nil
+	})
+
+	return descs, err
+}
 
 // dumpPorts calls 'ovs-ofctl dump-ports' with the specified arguments and
 // parses the output into zero or more PortStats structs.
